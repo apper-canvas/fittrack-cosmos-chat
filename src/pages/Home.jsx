@@ -103,11 +103,25 @@ export default function Home() {
       default: return null;
   const filterActivityByDateRange = (activities, dateRange) => {
     const { startDate, endDate } = dateRange;
-    const start = parseISO(startDate);
-    const end = parseISO(endDate);
+      const { startDate, endDate } = dateRange;
+      const start = parseISO(startDate);
+      const end = parseISO(endDate);
+      
+      // Add one day to end date to make it inclusive
+      end.setHours(23, 59, 59, 999);
+      
+      const filtered = activities.filter(activity => {
+        const activityDate = parseISO(activity.date);
+        return isWithinInterval(activityDate, { start, end });
+      });
+      
+      setRecentActivity(filtered);
     
     // Add one day to end date to make it inclusive
-    end.setHours(23, 59, 59, 999);
+  
+  return (
+    <div>
+      <div className="mb-6">
     
     const filtered = activities.filter(activity => {
       const activityDate = parseISO(activity.date);
@@ -137,35 +151,6 @@ export default function Home() {
               <span className="hidden sm:inline">Refresh</span>
             </motion.button>
           </div>
-        </div>
-        
-        {/* Date range indicator */}
-        <div className="mt-2 text-sm text-surface-500 dark:text-surface-400">
-          Showing data for: <span className="font-medium text-surface-700 dark:text-surface-300">{currentDateRange.label}</span>
-          <span className="mx-1">·</span>
-          <span>{format(parseISO(currentDateRange.startDate), 'MMM d, yyyy')} - {format(parseISO(currentDateRange.endDate), 'MMM d, yyyy')}</span>
-        </div>
-          <RefreshIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
-        </motion.button>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fadeIn">
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map((stat) => {
-          const StatIcon = getIcon(stat.icon);
-          return (
-            <motion.div
-              key={stat.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: stat.id * 0.1 }}
-              className="card group hover:border-primary transition-all duration-300"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm text-surface-500 dark:text-surface-400">{stat.title}</p>
-                  <h3 className="text-2xl font-bold mt-1 text-surface-900 dark:text-white">{stat.value}</h3>
                   <p className={`text-xs mt-1 ${stat.change.includes('+') ? 'text-green-500' : stat.change.includes('-') ? 'text-red-500' : 'text-surface-500'}`}>
                     {stat.change} from previous period
                   </p>
