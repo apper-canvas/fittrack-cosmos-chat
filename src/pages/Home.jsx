@@ -127,7 +127,7 @@ export default function Home() {
           <h1 className="text-2xl md:text-3xl font-bold text-surface-900 dark:text-white">
             Dashboard
           </h1>
-          <div className="flex items-center space-x-3">
+         <div className="flex items-center space-x-3">
             <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
             <motion.button 
               whileHover={{ scale: 1.05 }}
@@ -139,6 +139,7 @@ export default function Home() {
               <RefreshIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </motion.button>
+          </div>
         </div>
       </div>
       
