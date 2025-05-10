@@ -141,8 +141,23 @@ export default function Home() {
             </motion.button>
         </div>
       </div>
+      
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fadeIn">
-          </div>
+        {stats.map((stat) => {
+          const StatIcon = getIcon(stat.icon);
+          return (
+            <motion.div
+              key={stat.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: stat.id * 0.1 }}
+              className="group card hover:border-primary transition-colors duration-200 cursor-pointer"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-surface-900 dark:text-white">{stat.value}</h3>
+                  <p className="text-sm text-surface-500 dark:text-surface-400">{stat.title}</p>
                   <p className={`text-xs mt-1 ${stat.change.includes('+') ? 'text-green-500' : stat.change.includes('-') ? 'text-red-500' : 'text-surface-500'}`}>
                     {stat.change} from previous period
                   </p>
