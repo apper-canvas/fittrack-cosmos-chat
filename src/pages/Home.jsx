@@ -101,27 +101,16 @@ export default function Home() {
       case 'class-booking': return <BookingIcon className="h-4 w-4 text-purple-500" />;
       case 'new-member': return <NewMemberIcon className="h-4 w-4 text-orange-500" />;
       default: return null;
+    }
+  };
+  
   const filterActivityByDateRange = (activities, dateRange) => {
     const { startDate, endDate } = dateRange;
-      const { startDate, endDate } = dateRange;
-      const start = parseISO(startDate);
-      const end = parseISO(endDate);
-      
-      // Add one day to end date to make it inclusive
-      end.setHours(23, 59, 59, 999);
-      
-      const filtered = activities.filter(activity => {
-        const activityDate = parseISO(activity.date);
-        return isWithinInterval(activityDate, { start, end });
-      });
-      
-      setRecentActivity(filtered);
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
     
     // Add one day to end date to make it inclusive
-  
-  return (
-    <div>
-      <div className="mb-6">
+    end.setHours(23, 59, 59, 999);
     
     const filtered = activities.filter(activity => {
       const activityDate = parseISO(activity.date);
@@ -131,8 +120,8 @@ export default function Home() {
     setRecentActivity(filtered);
   };
 
-    }
-  };
+  return (
+    <div>
       <div className="mb-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl md:text-3xl font-bold text-surface-900 dark:text-white">
@@ -150,6 +139,9 @@ export default function Home() {
               <RefreshIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </motion.button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fadeIn">
           </div>
                   <p className={`text-xs mt-1 ${stat.change.includes('+') ? 'text-green-500' : stat.change.includes('-') ? 'text-red-500' : 'text-surface-500'}`}>
                     {stat.change} from previous period
