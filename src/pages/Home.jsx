@@ -1,5 +1,45 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import getIcon from '../utils/iconUtils';
+import QuickActions from '../components/QuickActions';
+
+export default function Home() {
+  const [isLoading, setIsLoading] = useState(false);
+  const RefreshIcon = getIcon('RefreshCw');
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    // Simulate refresh
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-surface-800 dark:text-white">Dashboard</h1>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex items-center space-x-2 px-4 py-2 bg-surface-100 dark:bg-surface-700 rounded-lg text-surface-700 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
+          onClick={handleRefresh}
+        >
+          <RefreshIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Refresh</span>
+        </motion.button>
+      </div>
+      
+      {/* Quick Actions Section */}
+      <div className="mb-8">
+        <QuickActions />
+      </div>
+      
+      {/* Other dashboard content can be added below */}
+      
+    </div>
+  );
+}
 import { toast } from 'react-toastify';
 import { format, parseISO, isWithinInterval } from 'date-fns';
 import getIcon from '../utils/iconUtils';

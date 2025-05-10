@@ -70,6 +70,14 @@
   .badge-accent {
     @apply badge bg-accent/10 text-accent dark:bg-accent/20;
   }
+  
+  .quick-action-icon {
+    @apply w-12 h-12 rounded-full flex items-center justify-center;
+  }
+  
+  .quick-action-primary {
+    @apply bg-primary/10 text-primary dark:bg-primary/20;
+  }
 }
 
 @layer utilities {
