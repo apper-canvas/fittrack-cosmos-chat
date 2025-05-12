@@ -1,76 +1,36 @@
 import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion } from 'framer-motion';
+import { toast } from 'react-toastify';
+import { format, parseISO, isWithinInterval, subDays } from 'date-fns';
 import getIcon from '../utils/iconUtils';
 import QuickActions from '../components/QuickActions';
-
-export default function Home() {
-  const [isLoading, setIsLoading] = useState(false);
-  const RefreshIcon = getIcon('RefreshCw');
-
-  const handleRefresh = () => {
-    setIsLoading(true);
-    // Simulate refresh
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-surface-800 dark:text-white">Dashboard</h1>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="flex items-center space-x-2 px-4 py-2 bg-surface-100 dark:bg-surface-700 rounded-lg text-surface-700 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
-          onClick={handleRefresh}
-        >
-          <RefreshIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
-        </motion.button>
-      </div>
-      
-      {/* Quick Actions Section */}
-      <div className="mb-8">
-        <QuickActions />
-      </div>
-      
-      {/* Other dashboard content can be added below */}
-      
-    </div>
-  );
-}
-import { toast } from 'react-toastify';
-import { format, parseISO, isWithinInterval } from 'date-fns';
-import getIcon from '../utils/iconUtils';
-import MainFeature from '../components/MainFeature';
-import DateRangeFilter from '../components/DateRangeFilter';
+import activityService from '../services/activityService';
+import memberService from '../services/memberService';
+import classScheduleService from '../services/classScheduleService';
+import paymentService from '../services/paymentService';
+import { setActivities } from '../store/slices/activitiesSlice';
+import { setMembers } from '../store/slices/membersSlice';
 
 export default function Home() {
   const [stats, setStats] = useState([
-    { id: 1, title: 'Total Members', value: 256, change: '+12%', icon: 'Users' },
-    { id: 2, title: 'Today\'s Check-ins', value: 48, change: '+8%', icon: 'LogIn' },
-    { id: 3, title: 'Active Classes', value: 12, change: '0%', icon: 'Dumbbell' },
-    { id: 4, title: 'Monthly Revenue', value: '$12,650', change: '+15%', icon: 'DollarSign' },
+    { id: 1, title: 'Total Members', value: 0, change: '0%', icon: 'Users' },
+    { id: 2, title: 'Today\'s Check-ins', value: 0, change: '0%', icon: 'LogIn' },
+    { id: 3, title: 'Active Classes', value: 0, change: '0%', icon: 'Dumbbell' },
+    { id: 4, title: 'Monthly Revenue', value: '$0', change: '0%', icon: 'DollarSign' },
   ]);
   
-  const [recentActivity, setRecentActivity] = useState([
-    { id: 1, type: 'check-in', name: 'Emma Thompson', time: '10 minutes ago' },
-    { id: 2, type: 'payment', name: 'John Davis', time: '25 minutes ago', amount: '$89.99' },
-    { id: 3, type: 'class-booking', name: 'Sophia Lee', time: '1 hour ago', className: 'Power Yoga' },
-    { id: 4, type: 'new-member', name: 'Michael Rodriguez', time: '2 hours ago' },
-    { id: 5, type: 'check-in', name: 'Rebecca Wilson', time: '3 hours ago' }
-  ]);
-  
+  const [recentActivity, setRecentActivity] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentDateRange, setCurrentDateRange] = useState({
-    startDate: format(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+    startDate: format(subDays(new Date(), 6), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd'),
     label: 'Last 7 Days'
   });
   
-  // Save original data for filtering
-  const [originalRecentActivity, setOriginalRecentActivity] = useState([]);
+  const dispatch = useDispatch();
+  const activities = useSelector(state => state.activities.activities);
+  const members = useSelector(state => state.members.members);
   
   const CheckInIcon = getIcon('LogIn');
   const PaymentIcon = getIcon('CreditCard');
@@ -79,59 +39,166 @@ export default function Home() {
   const RefreshIcon = getIcon('RefreshCw');
 
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      // Initialize with sample data - normally this would come from an API
-      const sampleActivity = [
-        { id: 1, type: 'check-in', name: 'Emma Thompson', time: '10 minutes ago', date: '2023-10-15' },
-        { id: 2, type: 'payment', name: 'John Davis', time: '25 minutes ago', amount: '$89.99', date: '2023-10-15' },
-        { id: 3, type: 'class-booking', name: 'Sophia Lee', time: '1 hour ago', className: 'Power Yoga', date: '2023-10-14' },
-        { id: 4, type: 'new-member', name: 'Michael Rodriguez', time: '2 hours ago', date: '2023-10-13' },
-        { id: 5, type: 'check-in', name: 'Rebecca Wilson', time: '3 hours ago', date: '2023-10-12' },
-        { id: 6, type: 'payment', name: 'David Thompson', time: '1 day ago', amount: '$120.00', date: '2023-10-11' },
-        { id: 7, type: 'class-booking', name: 'Jennifer Adams', time: '2 days ago', className: 'Spinning', date: '2023-10-10' },
-        { id: 8, type: 'check-in', name: 'Robert Johnson', time: '3 days ago', date: '2023-10-09' },
-        { id: 9, type: 'new-member', name: 'Sarah Mitchell', time: '4 days ago', date: '2023-10-08' },
-        { id: 10, type: 'check-in', name: 'Thomas Wright', time: '5 days ago', date: '2023-10-07' }
-      ];
-      
-      setOriginalRecentActivity(sampleActivity);
-      filterActivityByDateRange(sampleActivity, currentDateRange);
-      setIsLoading(false);
-    }, 1000);
+    const loadDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch activities
+        const activitiesData = await activityService.fetchActivities(10);
+        dispatch(setActivities(activitiesData));
+        
+        // Fetch members
+        const membersData = await memberService.fetchMembers();
+        dispatch(setMembers(membersData));
+        
+        // Fetch upcoming classes
+        const upcomingClasses = await classScheduleService.fetchUpcomingClasses();
+        
+        // Fetch recent payments
+        const recentPayments = await paymentService.fetchRecentPayments();
+        
+        // Update stats
+        const todayCheckIns = activitiesData.filter(
+          activity => activity.type === 'check-in' && 
+          activity.date === format(new Date(), 'yyyy-MM-dd')
+        ).length;
+        
+        const monthlyPayments = recentPayments.reduce((total, payment) => {
+          const paymentDate = parseISO(payment.date);
+          const now = new Date();
+          if (paymentDate.getMonth() === now.getMonth() && paymentDate.getFullYear() === now.getFullYear()) {
+            return total + (parseFloat(payment.amount) || 0);
+          }
+          return total;
+        }, 0);
+        
+        setStats([
+          { id: 1, title: 'Total Members', value: membersData.length, change: '+5%', icon: 'Users' },
+          { id: 2, title: 'Today\'s Check-ins', value: todayCheckIns, change: '+8%', icon: 'LogIn' },
+          { id: 3, title: 'Active Classes', value: upcomingClasses.length, change: '0%', icon: 'Dumbbell' },
+          { id: 4, title: 'Monthly Revenue', value: `$${monthlyPayments.toFixed(2)}`, change: '+15%', icon: 'DollarSign' },
+        ]);
+        
+        // Format activities for display
+        const formattedActivities = activitiesData.map(activity => {
+          let memberName = 'Unknown Member';
+          let time = 'Recent';
+          
+          // Find member name if this is a member activity
+          if (activity.type === 'check-in' || activity.type === 'payment') {
+            const activityName = activity.Name || '';
+            const nameParts = activityName.split(' ');
+            if (nameParts.length >= 2) {
+              memberName = `${nameParts[0]} ${nameParts[1]}`;
+            }
+          }
+          
+          // Format relative time
+          const activityDate = activity.date ? parseISO(activity.date) : new Date();
+          const now = new Date();
+          const diffMs = now - activityDate;
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          
+          if (diffDays === 0) {
+            if (activity.time) {
+              time = activity.time;
+            } else {
+              time = 'Today';
+            }
+          } else if (diffDays === 1) {
+            time = 'Yesterday';
+          } else {
+            time = `${diffDays} days ago`;
+          }
+          
+          return {
+            id: activity.Id,
+            type: activity.type,
+            name: memberName,
+            time: time,
+            amount: activity.amount,
+            className: activity.className,
+            date: activity.date
+          };
+        });
+        
+        setRecentActivity(formattedActivities);
+        
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+        toast.error("Failed to load dashboard data. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (originalRecentActivity.length > 0) {
-      filterActivityByDateRange(originalRecentActivity, currentDateRange);
-    }
-  }, [currentDateRange, originalRecentActivity]);
+    loadDashboardData();
+  }, [dispatch]);
 
   const handleDateRangeChange = (dateRange) => {
     setCurrentDateRange(dateRange);
+    filterActivityByDateRange(dateRange);
   };
 
-  const refreshData = () => {
+  const refreshData = async () => {
     setIsLoading(true);
-    
-    // Simulate refreshing data
-    setTimeout(() => {
-      // Update with "new" data
-      const updatedStats = stats.map(stat => ({
-        ...stat,
-        value: stat.title === 'Today\'s Check-ins' 
-          ? Math.floor(Math.random() * 10) + 48 
-          : stat.value
-      }));
+    try {
+      // Refresh all data
+      const activitiesData = await activityService.fetchActivities(10);
+      dispatch(setActivities(activitiesData));
       
-      // Re-filter activity with current date range
-      filterActivityByDateRange(originalRecentActivity, currentDateRange);
-      setStats(updatedStats);
-      setIsLoading(false);
+      // Format activities for display
+      const formattedActivities = activitiesData.map(activity => {
+        let memberName = 'Unknown Member';
+        let time = 'Recent';
+        
+        // Find member name if this is a member activity
+        if (activity.type === 'check-in' || activity.type === 'payment') {
+          const activityName = activity.Name || '';
+          const nameParts = activityName.split(' ');
+          if (nameParts.length >= 2) {
+            memberName = `${nameParts[0]} ${nameParts[1]}`;
+          }
+        }
+        
+        // Format relative time
+        const activityDate = activity.date ? parseISO(activity.date) : new Date();
+        const now = new Date();
+        const diffMs = now - activityDate;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+          if (activity.time) {
+            time = activity.time;
+          } else {
+            time = 'Today';
+          }
+        } else if (diffDays === 1) {
+          time = 'Yesterday';
+        } else {
+          time = `${diffDays} days ago`;
+        }
+        
+        return {
+          id: activity.Id,
+          type: activity.type,
+          name: memberName,
+          time: time,
+          amount: activity.amount,
+          className: activity.className,
+          date: activity.date
+        };
+      });
+      
+      setRecentActivity(formattedActivities);
+      filterActivityByDateRange(currentDateRange);
+      
       toast.success("Dashboard data refreshed!");
-    }, 800);
+    } catch (error) {
+      console.error("Error refreshing dashboard data:", error);
+      toast.error("Failed to refresh dashboard data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getActivityIcon = (type) => {
@@ -144,31 +211,74 @@ export default function Home() {
     }
   };
   
-  const filterActivityByDateRange = (activities, dateRange) => {
+  const filterActivityByDateRange = (dateRange) => {
+    if (!activities.length) return;
+    
     const { startDate, endDate } = dateRange;
     const start = parseISO(startDate);
-    const end = parseISO(endDate);
-    
-    // Add one day to end date to make it inclusive
+    const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
     
     const filtered = activities.filter(activity => {
+      if (!activity.date) return false;
       const activityDate = parseISO(activity.date);
       return isWithinInterval(activityDate, { start, end });
     });
     
-    setRecentActivity(filtered);
+    // Format activities for display
+    const formattedActivities = filtered.map(activity => {
+      let memberName = 'Unknown Member';
+      let time = 'Recent';
+      
+      // Find member name if this is a member activity
+      if (activity.type === 'check-in' || activity.type === 'payment') {
+        const activityName = activity.Name || '';
+        const nameParts = activityName.split(' ');
+        if (nameParts.length >= 2) {
+          memberName = `${nameParts[0]} ${nameParts[1]}`;
+        }
+      }
+      
+      // Format relative time
+      const activityDate = activity.date ? parseISO(activity.date) : new Date();
+      const now = new Date();
+      const diffMs = now - activityDate;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) {
+        if (activity.time) {
+          time = activity.time;
+        } else {
+          time = 'Today';
+        }
+      } else if (diffDays === 1) {
+        time = 'Yesterday';
+      } else {
+        time = `${diffDays} days ago`;
+      }
+      
+      return {
+        id: activity.Id,
+        type: activity.type,
+        name: memberName,
+        time: time,
+        amount: activity.amount,
+        className: activity.className,
+        date: activity.date
+      };
+    });
+    
+    setRecentActivity(formattedActivities);
   };
 
   return (
-    <div>
+    <div className="container mx-auto px-4 py-6">
       <div className="mb-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl md:text-3xl font-bold text-surface-900 dark:text-white">
             Dashboard
           </h1>
-         <div className="flex items-center space-x-3">
-            <DateRangeFilter onDateRangeChange={handleDateRangeChange} />
+          <div className="flex items-center space-x-3">
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -181,6 +291,11 @@ export default function Home() {
             </motion.button>
           </div>
         </div>
+      </div>
+      
+      {/* Quick Actions Section */}
+      <div className="mb-8">
+        <QuickActions />
       </div>
       
       {/* Stats Cards */}
@@ -215,45 +330,109 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Main Feature */}
         <div className="lg:col-span-3">
-          <MainFeature />
+          <div className="card h-full">
+            <h3 className="text-lg font-semibold mb-4 text-surface-900 dark:text-white">Member Overview</h3>
+            <div className="space-y-4">
+              {isLoading ? (
+                <div className="flex justify-center items-center py-20">
+                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : members.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-700">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Membership</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Expiry Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-200 dark:divide-surface-700">
+                      {members.slice(0, 5).map((member) => (
+                        <tr key={member.Id} className="hover:bg-surface-50 dark:hover:bg-surface-800/50 transition-colors">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="font-medium text-surface-900 dark:text-white">
+                              {member.firstName} {member.lastName}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              member.checkedIn 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                : 'bg-surface-100 text-surface-800 dark:bg-surface-700 dark:text-surface-300'
+                            }`}>
+                              {member.checkedIn ? 'Checked In' : 'Not Checked In'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              member.membershipType === 'premium' 
+                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' 
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                            }`}>
+                              {member.membershipType === 'premium' ? 'Premium' : 'Standard'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-surface-500 dark:text-surface-400">
+                            {member.expiryDate}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-surface-500 dark:text-surface-400">
+                  No members found. Add members to see them here.
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Recent Activity */}
         <div className="lg:col-span-2">
           <div className="card h-full">
             <h3 className="text-lg font-semibold mb-4 text-surface-900 dark:text-white">Recent Activity</h3>
-            <div className="space-y-4">
-              {recentActivity.length === 0 && (
-                <div className="text-center py-6 text-surface-500 dark:text-surface-400">
-                  No activity found in the selected date range
-                </div>
-              )}
-              {recentActivity.map((activity) => (
-                <motion.div 
-                  key={activity.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: activity.id * 0.1 }}
-                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700/50 transition-colors"
-                >
-                  <div className="p-2 rounded-full bg-surface-100 dark:bg-surface-700">
-                    {getActivityIcon(activity.type)}
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentActivity.length === 0 && (
+                  <div className="text-center py-6 text-surface-500 dark:text-surface-400">
+                    No activity found in the selected date range
                   </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <p className="font-medium text-surface-900 dark:text-white">{activity.name}</p>
-                      <span className="text-xs text-surface-500">{activity.time}</span>
+                )}
+                {recentActivity.map((activity, index) => (
+                  <motion.div 
+                    key={activity.id || index}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="flex items-start space-x-3 p-3 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-700/50 transition-colors"
+                  >
+                    <div className="p-2 rounded-full bg-surface-100 dark:bg-surface-700">
+                      {getActivityIcon(activity.type)}
                     </div>
-                    <p className="text-sm text-surface-600 dark:text-surface-400">
-                      {activity.type === 'check-in' && 'Checked in to the gym'}
-                      {activity.type === 'payment' && `Made a payment of ${activity.amount}`}
-                      {activity.type === 'class-booking' && `Booked ${activity.className} class`}
-                      {activity.type === 'new-member' && 'Joined as a new member'}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <p className="font-medium text-surface-900 dark:text-white">{activity.name}</p>
+                        <span className="text-xs text-surface-500">{activity.time}</span>
+                      </div>
+                      <p className="text-sm text-surface-600 dark:text-surface-400">
+                        {activity.type === 'check-in' && 'Checked in to the gym'}
+                        {activity.type === 'payment' && `Made a payment of ${activity.amount || '$0.00'}`}
+                        {activity.type === 'class-booking' && `Booked ${activity.className || 'a class'}`}
+                        {activity.type === 'new-member' && 'Joined as a new member'}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

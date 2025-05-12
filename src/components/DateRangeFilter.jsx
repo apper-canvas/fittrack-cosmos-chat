@@ -1,129 +1,107 @@
-import { useState, useRef, useEffect } from 'react';
-import { format, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { useState } from 'react';
 import getIcon from '../utils/iconUtils';
 
 export default function DateRangeFilter({ onDateRangeChange }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedRange, setSelectedRange] = useState('last7Days');
-  const [customRange, setCustomRange] = useState({
-    startDate: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
-    endDate: format(new Date(), 'yyyy-MM-dd')
-  });
-  const dropdownRef = useRef(null);
+  const [selectedRange, setSelectedRange] = useState('last7days');
   
   const CalendarIcon = getIcon('Calendar');
   const ChevronDownIcon = getIcon('ChevronDown');
-  const CheckIcon = getIcon('Check');
-
-  const ranges = [
+  
+  const dateRanges = [
     { id: 'today', label: 'Today' },
-    { id: 'last7Days', label: 'Last 7 Days' },
+    { id: 'yesterday', label: 'Yesterday' },
+    { id: 'last7days', label: 'Last 7 Days' },
+    { id: 'last30days', label: 'Last 30 Days' },
     { id: 'thisMonth', label: 'This Month' },
-    { id: 'lastMonth', label: 'Last Month' },
-    { id: 'custom', label: 'Custom Range' }
+    { id: 'lastMonth', label: 'Last Month' }
   ];
-
-  // Calculate date range based on selection
-  useEffect(() => {
-    const now = new Date();
-    let startDate, endDate;
-    
-    switch(selectedRange) {
-      case 'today':
-        startDate = format(now, 'yyyy-MM-dd');
-        endDate = format(now, 'yyyy-MM-dd');
-        break;
-      case 'last7Days':
-        startDate = format(subDays(now, 6), 'yyyy-MM-dd');
-        endDate = format(now, 'yyyy-MM-dd');
-        break;
-      case 'thisMonth':
-        startDate = format(startOfMonth(now), 'yyyy-MM-dd');
-        endDate = format(endOfMonth(now), 'yyyy-MM-dd');
-        break;
-      case 'lastMonth':
-        const lastMonth = subMonths(now, 1);
-        startDate = format(startOfMonth(lastMonth), 'yyyy-MM-dd');
-        endDate = format(endOfMonth(lastMonth), 'yyyy-MM-dd');
-        break;
-      case 'custom':
-        startDate = customRange.startDate;
-        endDate = customRange.endDate;
-        break;
-      default:
-        startDate = format(subDays(now, 6), 'yyyy-MM-dd');
-        endDate = format(now, 'yyyy-MM-dd');
-    }
-    
-    onDateRangeChange({ startDate, endDate, label: getRangeLabel(selectedRange) });
-  }, [selectedRange, customRange]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
   
   const handleRangeSelect = (rangeId) => {
     setSelectedRange(rangeId);
-    if (rangeId !== 'custom') {
-      setIsOpen(false);
+    
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch (rangeId) {
+      case 'today':
+        startDate = now;
+        endDate = now;
+        break;
+      case 'yesterday':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 1);
+        endDate = new Date(startDate);
+        break;
+      case 'last7days':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 6);
+        endDate = now;
+        break;
+      case 'last30days':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 29);
+        endDate = now;
+        break;
+      case 'thisMonth':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+      case 'lastMonth':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+        break;
+      default:
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 6);
+        endDate = now;
     }
+    
+    // Format dates to ISO string and get only the date part
+    const formatDate = (date) => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    onDateRangeChange({
+      startDate: formatDate(startDate),
+      endDate: formatDate(endDate),
+      label: dateRanges.find(r => r.id === rangeId).label
+    });
+    
+    setIsOpen(false);
   };
   
-  const handleCustomDateChange = (e, field) => {
-    setCustomRange({
-      ...customRange,
-      [field]: e.target.value
-    });
+  const getCurrentRangeLabel = () => {
+    const range = dateRanges.find(r => r.id === selectedRange);
+    return range ? range.label : 'Select Date Range';
   };
-
-  function getRangeLabel(rangeId) {
-    return ranges.find(r => r.id === rangeId)?.label || 'Custom';
-  }
-
+  
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={toggleDropdown}
-        className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-surface-800 border border-surface-300 dark:border-surface-600 rounded-lg text-surface-700 dark:text-surface-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
-        aria-label="Select date range"
+    <div className="relative">
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-2 px-3 py-2 bg-surface-100 dark:bg-surface-700 text-surface-700 dark:text-surface-300 rounded-lg hover:bg-surface-200 dark:hover:bg-surface-600 transition-colors"
       >
         <CalendarIcon className="h-4 w-4" />
-        <span>{getRangeLabel(selectedRange)}</span>
-        <ChevronDownIcon className={`h-4 w-4 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
+        <span className="hidden sm:inline">{getCurrentRangeLabel()}</span>
+        <ChevronDownIcon className="h-4 w-4" />
       </button>
-
+      
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-surface-800 rounded-lg shadow-lg border border-surface-200 dark:border-surface-700 z-10">
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-surface-800 rounded-lg shadow-lg overflow-hidden z-10 border border-surface-200 dark:border-surface-700">
           <div className="p-2">
-            {ranges.map((range) => (
-              <div key={range.id} className="mb-1 last:mb-0">
-                <button
-                  onClick={() => handleRangeSelect(range.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md flex items-center justify-between ${selectedRange === range.id ? 'bg-primary/10 text-primary' : 'hover:bg-surface-100 dark:hover:bg-surface-700'}`}
-                >
-                  {range.label}
-                  {selectedRange === range.id && <CheckIcon className="h-4 w-4" />}
-                </button>
-                
-                {selectedRange === 'custom' && range.id === 'custom' && (
-                  <div className="px-3 py-2 space-y-2">
-                    <input type="date" value={customRange.startDate} onChange={(e) => handleCustomDateChange(e, 'startDate')} className="w-full px-2 py-1 text-sm rounded border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-700" />
-                    <input type="date" value={customRange.endDate} onChange={(e) => handleCustomDateChange(e, 'endDate')} className="w-full px-2 py-1 text-sm rounded border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-700" />
-                  </div>
-                )}
-              </div>
+            {dateRanges.map((range) => (
+              <button
+                key={range.id}
+                onClick={() => handleRangeSelect(range.id)}
+                className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                  selectedRange === range.id 
+                    ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                    : 'hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-700 dark:text-surface-300'
+                }`}
+              >
+                {range.label}
+              </button>
             ))}
           </div>
         </div>
